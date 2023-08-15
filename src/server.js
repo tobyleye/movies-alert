@@ -22,6 +22,18 @@ const createApp = async (db) => {
 
   app.use(logger);
 
+  app.get("/", async (req, res) => {
+    let welcomeMessage = [
+      "Hey there, welcome",
+      "I'm not entirely sure what this is yet",
+      "but we are very glad to have you. Hope you having a wonderful day?",
+    ].join(" ");
+
+    res.json({
+      message: welcomeMessage,
+    });
+  });
+
   app.get("/recent-movies", async (req, res) => {
     try {
       let topMovies = await getFrontPageMovies();
