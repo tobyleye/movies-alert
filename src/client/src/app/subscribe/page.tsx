@@ -1,37 +1,61 @@
-const Input = (props: any) => {
-  return (
-    <div>
-      <input
-        {...props}
-        type="text"
-        className="py-2 px-4 border border-solid rounded border-gray-400"
-      />
-    </div>
-  );
-};
+"use client";
+import { Button, TextInput, Container } from "@mantine/core";
+import { useState } from "react";
+import { subscribe as $subscribe } from "@/src/api";
 
 export default function Subscribe() {
-  const subscribe = () => {};
+  const [movieTitle, setMovieTitle] = useState("");
+  const [email, setEmail] = useState("");
+
+  const clearForm = () => {
+    setMovieTitle("");
+    setEmail("");
+  };
+
+  const handleSubscribe = async () => {
+    console.log("form submitted!!");
+    try {
+      await $subscribe({ movieTitle, email });
+      clearForm();
+    } catch (error) {}
+  };
+
   return (
-    <div className="max-w-2xl mx-auto">
-      <h3 className="text-2xl mb-4 font-semibold">Subscribe form</h3>
-      <div>
-        <form action="/subscribe">
-          <div className="mb-4">
-            <label htmlFor="movieTitle">Movie title</label>
-            <Input type="text" placeholder="movie title" />
-          </div>
-          <div>
-            <label htmlFor="email">Email</label>
-            <Input ype="text" placeholder="it's safe with us" />
-          </div>
-          <div className="mt-4">
-            <button className="py-4 border-none rounded-md px-4 bg-green-500 text-white text-xl">
-              Submit
-            </button>
-          </div>
-        </form>
+    <Container>
+      <div className="max-w-2xl mx-auto">
+        <h3 className="text-2xl mb-4 font-semibold">Subscription form</h3>
+        <p>
+          Enter the title of the movie you'd like to watch and we will handle
+          the rest
+        </p>
+        <div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubscribe();
+            }}
+          >
+            <div className="mb-4 grid gap-2">
+              <TextInput
+                withAsterisk
+                required
+                value={movieTitle}
+                onChange={(e) => setMovieTitle(e.target.value)}
+                label="Movie title"
+              />
+              <TextInput
+                required
+                withAsterisk
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                label="Email"
+                placeholder="email you will like to receive alert"
+              />
+            </div>
+            <Button type="submit">Submit</Button>
+          </form>
+        </div>
       </div>
-    </div>
+    </Container>
   );
 }

@@ -6,6 +6,7 @@ export const dbConfig = {
   password: "root",
   host: "localhost",
   port: "3307",
+  database: "moviesalert",
 };
 
 export const mailConfig = {
