@@ -122,15 +122,14 @@ const getXproxxxLink = async (tfpdlMovieUrl) => {
   let downloadLink = page.querySelector(".button");
   if (downloadLink) {
     return downloadLink.getAttribute("href");
+  } else {
+    throw new Error(`cant get movie ${tfpdlMovieUrl} xproxxxLink`);
   }
-  return;
 };
 
-const getSafeTxtLink = async (xproxxLink) => {
+export const getSafeTxtLink = async (browser, xproxxLink) => {
   return new Promise(async (resolve) => {
-    let browser = await puppeteer.launch({
-      headless: false,
-    });
+    let page = await browser.newPage();
 
     browser.on("targetcreated", async function (target) {
       let url = target.url();
@@ -138,136 +137,138 @@ const getSafeTxtLink = async (xproxxLink) => {
       if (url) {
         let urlObject = new URL(url);
         if (urlObject.host === "safetxt.net") {
-          let page = await target.page();
-          let pageCookies = await page.cookies();
-          await new Promise((resolve) => setTimeout(resolve, 15000));
-          const links = await extractDownloadLinks(url, pageCookies);
-          console.log({ links });
-
-          setTimeout(async () => {
-            await browser.close();
-            resolve([url, pageCookies]);
-          }, 2 * 60 * 1000);
+          let targetPage = await target.page();
+          let pageCookies = await targetPage.cookies();
+          resolve([url, pageCookies]);
         }
       }
-      console.log("New Tab Created", url);
     });
 
-    let page = await browser.newPage();
-    await page.goto(xproxxLink);
-
     const waitForCountdownToFinish = async (element) => {
-      let run = async () => {
-        let text = await (await element.getProperty("textContent")).jsonValue();
-        let [seconds = ""] = text.split(/seconds/i);
-        console.log(seconds);
-        if (seconds !== 0) {
-          setTimeout(() => {
-            run();
-          }, 1000);
-        } else {
-          return;
-        }
+      let wait = async () => {
+        return new Promise(async (resolve) => {
+          let text = await (
+            await element.getProperty("textContent")
+          ).jsonValue();
+          let [seconds = ""] = text.split(/seconds/i);
+          console.log(seconds);
+
+          if (seconds > 0) {
+            setTimeout(async () => {
+              await wait();
+              resolve();
+            }, 1000);
+          } else {
+            let finalWait = 1000;
+            setTimeout(() => {
+              resolve();
+            }, finalWait);
+          }
+        });
       };
-      return run();
+
+      await wait();
     };
 
-    console.log("executing first wait..");
-    let firstCountdown = await page.waitForSelector("#soradodo > span");
+    await page.goto(xproxxLink);
+
+    // let SELECTORS = {
+    //   FIRST_COUNTDOWN: "#soralink-human-verif-countdown-text",
+    //   SECOND_COUNTDOWN: "",
+    //   LAST_COUNTDOWN: "",
+    // };
+
+    let firstCountdown = await page.waitForXPath(
+      `//*[@id="landing"]/div[2]/center/span`
+    );
     await waitForCountdownToFinish(firstCountdown);
-    let btn1 = await page.waitForSelector("#lite-human-verif-button");
+    let btn1 = await page.waitForXPath(
+      `//*[@id="landing"]/div[2]/center/img[2]`
+    );
     await btn1.click();
 
-    let secondCountdown = await page.waitForSelector("#soradodo > span");
+    let secondCountdown = await page.waitForXPath(
+      `//*[@id="landing"]/center/center/span`
+    );
     await waitForCountdownToFinish(secondCountdown);
-    let btn2 = await page.waitForSelector("#lite-start-sora-button");
+    let btn2 = await page.waitForXPath(`//*[@id="landing"]/center/div[3]/a`);
     await btn2.click();
 
-    let lastCountdown = await page.waitForSelector("#soradodo-end > span");
+    let lastCountdown = await page.waitForXPath(
+      `//*[@id="content"]/div[2]/center/div[1]/span`
+    );
     await waitForCountdownToFinish(lastCountdown);
-    let btn3 = await page.waitForSelector("#lite-end-sora-button");
+    let btn3 = await page.waitForXPath(
+      `//*[@id="content"]/div[2]/center/div[1]/img[2]`
+    );
     await btn3.click();
   });
 };
 
-const extractDownloadLinks = async (safeLink, cookies) => {
-  let Cookie = cookies
-    .map((cookie) => {
-      return `${cookie.name}=${cookie.value};`;
-    })
-    .join(" ");
-
-  console.log({ Cookie });
-
-  try {
-    let response = await axios.get(safeLink, {
-      headers: {
-        Cookie: Cookie,
-      },
-    });
-
-    let content = atob(response.data.content);
-    content = decodeURIComponent(content.replace(/\+/g, "%20"));
-    let links = htmlParser
-      .parse(content)
-      .querySelectorAll(".cm-url")
-      .map((link) => link.getAttribute("href"));
-    return links;
-  } catch (err) {
-    return [];
-  }
-};
-
-export const generateDownloadLink = async (url) => {
-  let xproxxLink = await getXproxxxLink(url);
-  console.log({ xproxxLink });
-  if (!xproxxLink) {
-    throw new Error("movie url is not available");
-  }
-  let [safeTxtLink, cookies] = await getSafeTxtLink(xproxxLink);
-  // let downloadLinks = await extractDownloadLinks(safeTxtLink, cookies);
-  // console.log({ downloadLinks });
-  // return downloadLinks;
-
-  /*
-
-    extract link from safetxt.net
-    let response = await axios.post('https://safetxt.net/get-paste', {
-          slug: 'pl3btc9cz3', 
-          password: 'tfpdl', 
-          _token: 'JAox6OrSBvykWlmX0WL1EXUmcZKl8KDkwhtVRnqQ'
-    })
-    content = atob(data.content);
-    content = decodeURIComponent(content.replace(/\+/g, '%20'));
-
-  */
-};
-
-const logInterceptedRequests = async (url) => {
-  let browser = await puppeteer.launch({
-    headless: false,
-  });
-  let page = await browser.newPage();
+const disableJavascript = async (page) => {
   await page.setRequestInterception(true);
-  page.on("request", (interceptedRequest) => {
-    console.log({
-      url: interceptedRequest.url(),
-      headers: interceptedRequest.headers(),
-      requestBody: interceptedRequest.postData(),
-      response: interceptedRequest.response(),
-    });
-    interceptedRequest.continue();
+  page.on("request", (request) => {
+    if (request.resourceType() === "script") {
+      request.abort();
+    } else {
+      request.continue();
+    }
   });
-
-  await page.goto(url);
 };
 
-// getFrontPageMovies().then((movies) => {
-//   console.log(movies);
-// });
+const getDownloadLinksFromSafeTxt = async (browser, safeTxtLink) => {
+  let page = await browser.newPage();
+  await disableJavascript(page);
+  try {
+    await page.goto(safeTxtLink, {
+      waitUntil: "domcontentloaded",
+      timeout: 10 * 1000,
+    });
+  } catch {}
+  let pageContent = await page.content();
 
-let barbieDownloadLink = `https://tfpdl.se/tfpdl?d048c7b91a=K2h3VWplSEdFckk3MWF0RGNiaHV6bFl1bExPMVJjYVJtbVpOZjdoeG5RL3MvUGJvc00wQXhUWkVDZWFIaXF5d1RFK3ZhT3JONkVKTjA3VlVINEIvaEE9PQ==`;
+  let token = pageContent.match(/token\:\s?\'(.*?)\'/)[1];
+  let slug = pageContent.match(/slug\:\s?\'(.*?)\'/)[1];
 
-// logInterceptedRequests(
-//   "https://tfpdl.se/tfpdl?d048c7b91a=Q0lsWUtrbG8ydS9sRE5QelppR1loMldlblhzdmF0YTVKVmh6V1JIV2N6MngvUVMwVkl6N1ZxWGZvVmJmRUVMU0JXSnpXYjhyRDBkNGVMYmhwQnY2Yks1NGhyQ3g3NVFmcUQvMU80NnB0djQ9"
-// );
+  if (!token && !slug) {
+    throw new Error(`Couldn't extract token and slug from page`);
+  }
+  console.log({ token, slug });
+
+  const PASSWORD = "tfpdl";
+
+  let API_URL = "https://safetxt.net/get-paste";
+  console.log("fetching with axios..");
+  let response = await axios.post(API_URL, {
+    _token: token,
+    password: PASSWORD,
+    slug,
+  });
+  console.log("fetch done!");
+
+  let content = atob(response.data.content);
+  content = decodeURIComponent(content.replace(/\+/g, "%20"));
+  let links = htmlParser
+    .parse(content)
+    .querySelectorAll(".cm-url")
+    .map((link) => link.getAttribute("href"));
+  console.log({ links });
+  return links;
+};
+
+export const generateDownloadLinksFromRedirectLink = async (xproxxLink) => {
+  let browser = await puppeteer.launch({
+    headless: true,
+  });
+  let [safeTxtLink] = await getSafeTxtLink(browser, xproxxLink);
+  let links = await getDownloadLinksFromSafeTxt(browser, safeTxtLink);
+  await browser.close();
+  return links;
+};
+
+export const generateDownloadLinkFromMovieLink = async (url) => {
+  let xproxxLink = await getXproxxxLink(url);
+  let links = await generateDownloadLinksFromRedirectLink(xproxxLink);
+  console.log({ links });
+  return links;
+};
