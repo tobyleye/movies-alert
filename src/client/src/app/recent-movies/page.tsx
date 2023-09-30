@@ -1,5 +1,4 @@
 "use client";
-import { getRecentMovies } from "@/src/api";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -9,10 +8,27 @@ import {
   Grid,
   SimpleGrid,
   Button,
+  Loader,
 } from "@mantine/core";
+import * as $api from "@/src/api";
 
 const MovieCard = ({ movie }: { movie: any }) => {
-  const generateDownloadLink = () => {};
+  const [downloadLinks, setDownloadLinks] = useState([]);
+  const [generatingLink, setGeneratingLink] = useState(false);
+
+  const generateDownloadLink = async () => {
+    try {
+      setGeneratingLink(true);
+      let links = await $api.generateDownloadLink(movie.link);
+      setDownloadLinks(links);
+    } catch (err) {
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
+  const linksGenerated = generatingLink === false && downloadLinks.length > 0;
+
   return (
     <div key={movie.link}>
       <Card shadow="sm" padding="xl">
@@ -30,13 +46,44 @@ const MovieCard = ({ movie }: { movie: any }) => {
           {movie.title}
         </Text>
 
-        <Text mt="xs" color="dimmed" size="sm">
+        <Text mt="xs" color="dimmed" size="sm" style={{ marginBottom: 25 }}>
           {movie.synopsis}
         </Text>
 
-        <div>
-          <Button onClick={generateDownloadLink}>generate download link</Button>
-        </div>
+        {linksGenerated ? (
+          <ul>
+            {downloadLinks.map((link, index) => (
+              <li key={`download-link-${index}`}>
+                <a href={link} target="_blank">
+                  {link}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Button
+                loading={generatingLink === true}
+                onClick={generateDownloadLink}
+              >
+                generate download link
+              </Button>
+            </div>
+            {generatingLink === true && (
+              <div
+                style={{
+                  marginTop: 8,
+                  textAlign: "center",
+                  fontSize: 14,
+                  color: "gray",
+                }}
+              >
+                Please exercise some patience, this would take a while
+              </div>
+            )}
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -44,14 +91,21 @@ const MovieCard = ({ movie }: { movie: any }) => {
 export default function RecentMovies() {
   const [movies, setMovies] = useState([]);
   const [errorLoadingMovies, setErrorLoadingMovies] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getRecentMovies()
+    setLoading(true);
+    $api
+      .getRecentMovies()
       .then(({ data }) => {
         setMovies(data);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.log("error --", err);
         setErrorLoadingMovies(true);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, []);
   return (
@@ -59,24 +113,33 @@ export default function RecentMovies() {
       <Grid justify="center">
         <Grid.Col sm={6}>
           <h1 className="text-center mb-0">Recent movies</h1>
-          <Text align="center" className="mb-8">
-            Source: tfpdl.
-            <Text size="sm" component="span">
-              (whatever domain they are using now)
-            </Text>
+          <Text align="center" size="sm" className="mb-8">
+            Source: tfpdl
           </Text>
 
-          {errorLoadingMovies ? (
-            <Alert>Ahh sorry, ann error occured loading movies</Alert>
-          ) : null}
-
-          <SimpleGrid spacing="xl">
-            {movies && movies.length > 0
-              ? movies.map((movie: any) => {
-                  return <MovieCard key={movie.link} movie={movie} />;
-                })
-              : null}
-          </SimpleGrid>
+          {loading ? (
+            <div
+              style={{
+                padding: "50px 0",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <Loader />
+            </div>
+          ) : errorLoadingMovies ? (
+            <Alert style={{ textAlign: "center" }}>
+              Ahh sorry, ann error occured loading movies
+            </Alert>
+          ) : (
+            <SimpleGrid spacing="xl">
+              {movies && movies.length > 0
+                ? movies.map((movie: any) => {
+                    return <MovieCard key={movie.link} movie={movie} />;
+                  })
+                : null}
+            </SimpleGrid>
+          )}
         </Grid.Col>
       </Grid>
     </div>

@@ -5,7 +5,6 @@ import router from "./router.js";
 import db from "./db.js";
 import cors from "cors";
 import schedule from "node-schedule";
-import { startSubscriptionJob } from "./jobs.js";
 
 const createApp = async () => {
   const app = express();
@@ -43,7 +42,6 @@ const runServer = async () => {
   app.listen(PORT, () =>
     console.log(`app is running on port localhost:${PORT}`)
   );
-  startSubscriptionJob();
 };
 
 runServer();

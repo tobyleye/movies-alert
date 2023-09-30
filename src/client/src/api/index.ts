@@ -20,3 +20,9 @@ export const subscribe = ({
 export const getRecentMovies = () => {
   return client.get("/recent-movies").then(({ data }) => data);
 };
+
+export const generateDownloadLink = (url: string) => {
+  return client
+    .post("/generateDownloadLink", { url })
+    .then((res) => res.data.data);
+};

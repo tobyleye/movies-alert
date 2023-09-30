@@ -6,6 +6,9 @@ import puppeteer from "puppeteer";
 // do 4 pages for starters
 let MAX_PAGE = 4;
 
+let USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36";
+
 export const crawlPages = async () => {
   let response = await axios.get("https://tfpdl.se/category/movies/");
   let html = response.data;
@@ -79,7 +82,13 @@ export const crawlPages = async () => {
 
 export const getFrontPageMovies = async () => {
   let url = "https://tfpdl.se/category/movies/";
-  let response = await axios.get(url);
+  let response = await axios.get(url, {
+    headers: {
+      "User-Agent": USER_AGENT,
+    },
+  });
+
+  console.log(`${url} status (${response.status})`);
   let { data } = response;
 
   let $ = htmlParser.parse(data);
@@ -117,7 +126,11 @@ export const getFrontPageMovies = async () => {
 };
 
 const getXproxxxLink = async (tfpdlMovieUrl) => {
-  let response = await axios.get(tfpdlMovieUrl);
+  let response = await axios.get(tfpdlMovieUrl, {
+    headers: {
+      "User-Agent": USER_AGENT,
+    },
+  });
   let page = htmlParser.parse(response.data);
   let downloadLink = page.querySelector(".button");
   if (downloadLink) {
