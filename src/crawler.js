@@ -272,6 +272,7 @@ const getDownloadLinksFromSafeTxt = async (browser, safeTxtLink) => {
 export const generateDownloadLinksFromRedirectLink = async (xproxxLink) => {
   let browser = await puppeteer.launch({
     headless: true,
+    args: ["--no-sandbox"],
   });
   let [safeTxtLink] = await getSafeTxtLink(browser, xproxxLink);
   let links = await getDownloadLinksFromSafeTxt(browser, safeTxtLink);
