@@ -5,6 +5,8 @@ import router from "./router.js";
 import db from "./db.js";
 import cors from "cors";
 import schedule from "node-schedule";
+import path from "path";
+import { rootDir } from "./config.js";
 
 const createApp = async () => {
   const app = express();
@@ -25,8 +27,15 @@ const createApp = async () => {
   });
 
   app.use(logger);
+  let publicPath = path.resolve(rootDir, "public");
+  app.use(express.static(publicPath));
 
-  app.use("/", router);
+  app.use("/api/", router);
+
+  app.use("*", (req, res) => {
+    res.sendFile(path.resolve(rootDir, "public/index.html"));
+  });
+
   app.use((error, req, res, next) => {
     res.status(500).send();
   });

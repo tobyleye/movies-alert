@@ -25,8 +25,8 @@ export default function Subscribe() {
       <div className="max-w-2xl mx-auto">
         <h3 className="text-2xl mb-4 font-semibold">Subscription form</h3>
         <p>
-          Enter the title of the movie you'd like to watch and we will handle
-          the rest
+          {`Enter the title of the movie you'd like to watch and we will handle
+          the rest`}
         </p>
         <div>
           <form
@@ -52,7 +52,14 @@ export default function Subscribe() {
                 placeholder="email you will like to receive alert"
               />
             </div>
-            <Button type="submit">Submit</Button>
+            <Button
+              type="submit"
+              onClick={() => {
+                alert("Sorry, this is still a wip");
+              }}
+            >
+              Submit
+            </Button>
           </form>
         </div>
       </div>
