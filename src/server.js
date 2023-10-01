@@ -4,9 +4,13 @@ import { format, transports } from "winston";
 import router from "./router.js";
 import db from "./db.js";
 import cors from "cors";
-import schedule from "node-schedule";
 import path from "path";
 import { rootDir } from "./config.js";
+
+const CLIENT_ROOT_DIR = path.resolve(rootDir, "client/dist");
+const CLIENT_ENTRY = path.resolve(CLIENT_ROOT_DIR, "index.html");
+
+console.log({ CLIENT_ENTRY, CLIENT_ROOT_DIR });
 
 const createApp = async () => {
   const app = express();
@@ -27,13 +31,13 @@ const createApp = async () => {
   });
 
   app.use(logger);
-  let publicPath = path.resolve(rootDir, "public");
-  app.use(express.static(publicPath));
+
+  app.use(express.static(CLIENT_ROOT_DIR));
 
   app.use("/api/", router);
 
   app.use("*", (req, res) => {
-    res.sendFile(path.resolve(rootDir, "public/index.html"));
+    res.sendFile(CLIENT_ENTRY);
   });
 
   app.use((error, req, res, next) => {

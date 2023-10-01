@@ -59,6 +59,14 @@ const MovieCard = ({ movie }: { movie: any }) => {
                 </a>
               </li>
             ))}
+
+            <style jsx>
+              {`
+                ul {
+                  list-style: none;
+                }
+              `}
+            </style>
           </ul>
         ) : (
           <div>

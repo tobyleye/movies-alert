@@ -3,7 +3,7 @@ const path = require("path");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "export",
-  distDir: "../public",
+  distDir: "dist",
 };
 
 module.exports = nextConfig;

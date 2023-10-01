@@ -1,7 +1,12 @@
 import axios from "axios";
 
+const baseURL =
+  process.env.NODE_ENV === "development" ? "http://localhost:5183/api" : "/api";
+
+console.log({ baseURL });
+
 export const client = axios.create({
-  baseURL: "http://localhost:5183/api",
+  baseURL: baseURL,
 });
 
 export const subscribe = ({
