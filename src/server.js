@@ -46,7 +46,7 @@ const createApp = async () => {
 const PORT = process.env.PORT ?? 5183;
 
 const runServer = async () => {
-  await db.connect();
+  // await db.connect();
   let app = await createApp();
   app.listen(PORT, () =>
     console.log(`app is running on port localhost:${PORT}`)
