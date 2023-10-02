@@ -80,8 +80,13 @@ export const crawlPages = async () => {
   await fs.writeFile("./movies.json", JSON.stringify(movies, null, 2));
 };
 
-export const getFrontPageMovies = async () => {
-  let url = "https://tfpdl.se/category/movies/";
+export const getFrontPageMovies = async (page) => {
+  let url = "https://tfpdl.se/category/movies";
+  if (page > 1) {
+    url = url + `/page/${page}`;
+  }
+  console.log({ url });
+
   let response = await axios.get(url, {
     headers: {
       "User-Agent": USER_AGENT,
@@ -122,7 +127,11 @@ export const getFrontPageMovies = async () => {
     });
   });
 
-  return movies;
+  let lastPageUrl = $.querySelector(".pagination .last").getAttribute("href");
+  let lastPageUrlParts = lastPageUrl.split("/").filter((part) => part !== "");
+  let lastPage = lastPageUrlParts[lastPageUrlParts.length - 1];
+
+  return { movies, lastPage };
 };
 
 const getXproxxxLink = async (tfpdlMovieUrl) => {

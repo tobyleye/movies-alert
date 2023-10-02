@@ -30,7 +30,7 @@ const createApp = async () => {
     format: format.json(),
   });
 
-  app.use(logger);
+  // app.use(logger);
 
   app.use(express.static(CLIENT_ROOT_DIR));
 

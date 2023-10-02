@@ -5,6 +5,7 @@ import {
   generateDownloadLinkFromMovieLink,
   getFrontPageMovies,
 } from "./crawler.js";
+import { cacheIt } from "./cache.js";
 
 const router = express.Router();
 
@@ -20,11 +21,24 @@ router.get("/", async (req, res) => {
   });
 });
 
-router.get("/recent-movies", async (req, res) => {
+router.get("/recentMovies", async (req, res) => {
+  let { page = 1 } = req.query;
+  page = parseInt(page);
+  if (page < 1 || typeof page !== "number") {
+    page = 1;
+  }
+
+  console.log({ page });
+
   try {
-    let topMovies = await getFrontPageMovies();
-    res.json({ data: topMovies });
+    let cacheKey = `movies-${page}`;
+    let { movies, lastPage } = await cacheIt(cacheKey, () =>
+      getFrontPageMovies(page)
+    );
+
+    res.json({ data: movies, lastPage });
   } catch (err) {
+    console.log(err);
     res.json({ data: [] });
   }
 });
@@ -52,10 +66,16 @@ router.get("/recent-movies", async (req, res) => {
 
 router.post("/generateDownloadLink", async (req, res) => {
   let { url } = req.body;
+  let urlParts = url.split("/").filter((part) => part.trim() !== "");
+  let movieTitle = urlParts[urlParts.length - 1];
   if (!url) {
     return res.status(400).json({ error: "movie link is required" });
   }
-  let links = await generateDownloadLinkFromMovieLink(url);
+
+  let cacheKey = `movie:${movieTitle}`;
+  let links = await cacheIt(cacheKey, () =>
+    generateDownloadLinkFromMovieLink(url)
+  );
   res.json({
     data: links,
   });
