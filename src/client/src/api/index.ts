@@ -22,8 +22,14 @@ export const subscribe = ({
   });
 };
 
-export const getRecentMovies = () => {
-  return client.get("/recent-movies").then(({ data }) => data);
+export const getRecentMovies = (page: number = 1) => {
+  return client
+    .get("/recentMovies", {
+      params: {
+        page,
+      },
+    })
+    .then(({ data }) => data);
 };
 
 export const generateDownloadLink = (url: string) => {
