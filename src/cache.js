@@ -6,7 +6,10 @@ const prodConnString = process.env.REDIS_URL;
 
 const isProd = process.env.NODE_ENV === "production";
 
-const redis = new Redis(isProd ? prodConnString : localConnString);
+let connStr = isProd ? prodConnString : localConnString;
+console.log({ connStr });
+
+const redis = new Redis(connStr);
 
 export const cacheIt = async (key, fn) => {
   let value = await redis.get(key);
