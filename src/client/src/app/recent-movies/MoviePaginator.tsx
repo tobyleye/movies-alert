@@ -24,7 +24,6 @@ export const MoviesPaginator = ({
         onPageChange={(e) => onPageChange?.(e.selected + 1)}
         nextLabel={<FiChevronRight />}
         previousLabel={<FiChevronLeft />}
-        pageRangeDisplayed={0}
       />
       <style jsx global>{`
         .movie-paginator-container {
