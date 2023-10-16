@@ -14,6 +14,11 @@ let barbieRedirectLink = `https://tfpdl.se/tfpdl?d048c7b91a=K2h3VWplSEdFckk3MWF0
 //   console.log(links);
 // });
 
-generateDownloadLinkFromMovieLink(
-  "https://tfpdl.se/the-wonderful-story-of-henry-sugar-2023-1080p-web-dl-dd5-1-x264-tfpdl/"
-);
+// generateDownloadLinkFromMovieLink(
+//   "https://tfpdl.se/the-wonderful-story-of-henry-sugar-2023-1080p-web-dl-dd5-1-x264-tfpdl/"
+// );
+
+let theEqualizerMovie =
+  "https://tfpdl.se/the-equalizer-3-2023-720p-web-dl-x264-tfpdl/";
+
+generateDownloadLinkFromMovieLink(theEqualizerMovie).then(console.log);

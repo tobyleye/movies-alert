@@ -6,6 +6,7 @@ import db from "./db.js";
 import cors from "cors";
 import path from "path";
 import { rootDir } from "./config.js";
+import { Db } from "./dbv2.js";
 
 const CLIENT_ROOT_DIR = path.resolve(rootDir, "client/dist");
 const CLIENT_ENTRY = path.resolve(CLIENT_ROOT_DIR, "index.html");
@@ -34,6 +35,14 @@ const createApp = async () => {
 
   app.use(express.static(CLIENT_ROOT_DIR));
 
+  app.get("/testdbv2", async (req, res) => {
+    try {
+      let result = await Db.raw("select now()");
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ message: "error occured " + err.message });
+    }
+  });
   app.use("/api/", router);
 
   app.use("*", (req, res) => {
