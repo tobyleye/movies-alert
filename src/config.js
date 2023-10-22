@@ -4,13 +4,23 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
-export const dbConfig = {
+let dbConfig = {
   user: "root",
   password: "root",
   host: "localhost",
   port: "3307",
   database: "moviesalert",
 };
+
+if (process.env.NODE_ENV === "production") {
+  dbConfig = {
+    uri: process.env.MYSQL_URL,
+  };
+}
+
+console.log({ dbConfig });
+
+export { dbConfig };
 
 export const mailConfig = {
   user: process.env.MAIL_USER,
