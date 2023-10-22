@@ -33,10 +33,9 @@ export default {
   production: {
     client: "mysql2",
     connection: {
-      database: dbConfig.database,
-      user: dbConfig.user,
-      password: dbConfig.password,
+      uri: process.env.MYSQL_URL,
     },
+
     pool: {
       min: 2,
       max: 10,

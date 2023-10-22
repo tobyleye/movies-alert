@@ -2,7 +2,6 @@ import express from "express";
 import expressWinston from "express-winston";
 import { format, transports } from "winston";
 import router from "./router.js";
-import db from "./db.js";
 import cors from "cors";
 import path from "path";
 import { rootDir } from "./config.js";
@@ -10,8 +9,6 @@ import { Db } from "./dbv2.js";
 
 const CLIENT_ROOT_DIR = path.resolve(rootDir, "client/dist");
 const CLIENT_ENTRY = path.resolve(CLIENT_ROOT_DIR, "index.html");
-
-console.log({ CLIENT_ENTRY, CLIENT_ROOT_DIR });
 
 const createApp = async () => {
   const app = express();
@@ -26,10 +23,10 @@ const createApp = async () => {
       extended: false,
     })
   );
-  const logger = expressWinston.logger({
-    transports: [new transports.Console()],
-    format: format.json(),
-  });
+  // const logger = expressWinston.logger({
+  //   transports: [new transports.Console()],
+  //   format: format.json(),
+  // });
 
   // app.use(logger);
 

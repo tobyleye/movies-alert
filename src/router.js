@@ -1,13 +1,22 @@
 import express from "express";
-import db from "./db.js";
-import { v4 as uuid } from "uuid";
 import {
+  crawlMoviePage,
+  promiseWait,
   generateDownloadLinkFromMovieLink,
-  getFrontPageMovies,
 } from "./crawler.js";
 import { cacheIt } from "./cache.js";
+import { Db } from "./dbv2.js";
 
 const router = express.Router();
+
+const parseStringToNumber = (number) => {
+  number = Number(number);
+  if (Number.isNaN(number)) {
+    return undefined;
+  } else {
+    return number;
+  }
+};
 
 router.get("/", async (req, res) => {
   let welcomeMessage = [
@@ -22,24 +31,25 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/recentMovies", async (req, res) => {
-  let { page = 1 } = req.query;
-  page = parseInt(page);
-  if (page < 1 || typeof page !== "number") {
-    page = 1;
-  }
+  let pageNumber = parseStringToNumber(req.query.page) ?? 1;
 
-  console.log({ page });
+  // index starts from 0
+  pageNumber = pageNumber - 1;
+
+  let ITEMS_PER_PAGE = 10;
 
   try {
-    let cacheKey = `movies-${page}`;
-    let { movies, lastPage } = await cacheIt(cacheKey, () =>
-      getFrontPageMovies(page)
-    );
+    let movies = await Db.select()
+      .limit(ITEMS_PER_PAGE)
+      .offset(ITEMS_PER_PAGE * pageNumber)
+      .table("movies");
+    let totalMovies = await Db.count("id").table("movies");
+    let lastPage = Math.ceil(totalMovies / ITEMS_PER_PAGE);
 
-    res.json({ data: movies, lastPage });
+    res.json({ data: movies, lastPage: lastPage });
   } catch (err) {
     console.log(err);
-    res.json({ data: [] });
+    res.status(500).send();
   }
 });
 
@@ -81,4 +91,41 @@ router.post("/generateDownloadLink", async (req, res) => {
   });
 });
 
+/* system routes */
+router.get("/_system/crawlPages", async (req, res) => {
+  try {
+    let { pages } = req.query;
+    pages = parseStringToNumber(pages);
+
+    let [movies, totalPages] = await crawlMoviePage(1);
+    await Db("movies").insert(movies);
+    let stopPage = pages ? Math.min(pages, totalPages) : totalPages;
+
+    // do one page at a time
+    const crawlRemainingPages = async () => {
+      for (let page = 2; page < stopPage; page++) {
+        console.log(`crawling page ${page}`);
+        try {
+          let [movies] = await crawlMoviePage(page);
+          await Db("movies").insert(movies);
+          let randomWaitSeconds = 3 + Math.floor(Math.random() * 5);
+          await promiseWait(randomWaitSeconds);
+        } catch (err) {
+          console.log(`can't crawl page ${page}. ${err.message}`);
+        }
+      }
+    };
+
+    crawlRemainingPages();
+
+    res.json({
+      message: `1 movie page crawled, ${totalPages - 1} to go`,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "ooops, an error occurred",
+      error: err.message,
+    });
+  }
+});
 export default router;

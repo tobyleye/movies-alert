@@ -1,83 +1,67 @@
 import axios from "axios";
-import fs from "fs/promises";
 import htmlParser from "node-html-parser";
 import puppeteer from "puppeteer";
-
-// do 4 pages for starters
-let MAX_PAGE = 4;
+import { v4 as uuid } from "uuid";
+import dayjs from "dayjs";
 
 let USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36";
 
-export const crawlPages = async () => {
-  let response = await axios.get("https://tfpdl.se/category/movies/");
-  let html = response.data;
+const getTotalPages = (pageContent) => {
+  let $ = htmlParser.parse(pageContent);
+  let lastPageUrl = $.querySelector(".pagination .last").getAttribute("href");
+  let lastPageUrlParts = lastPageUrl.split("/").filter((part) => part !== "");
+  let lastPage = lastPageUrlParts[lastPageUrlParts.length - 1];
+  lastPage = Number(lastPage);
+  return lastPage;
+};
 
-  let movies = [];
+export const crawlMoviePage = async (page = 1) => {
+  let url = `https://tfpdl.se/category/movies/page/${page}`;
 
-  const parsePage = (pageContent, pageNo) => {
-    let $ = cheerio.load(pageContent);
-    let items = $(".item-list");
+  let { data: pageContent } = await axios.get(url, {
+    headers: {
+      "User-Agent": USER_AGENT,
+    },
+  });
+  let $ = htmlParser.parse(pageContent);
+  let items = $.querySelectorAll(".item-list");
 
-    let pageMovies = [];
-    [...items].forEach((item) => {
-      let $item = cheerio.load(item);
-      let title = $item(".post-title a").text();
-      let synopsis = $item(".entry p").text().split("\n")[1];
-      // let downloadLinks = [];
-      let link = $item(".post-title a").attr("href");
-      pageMovies.push({
-        title,
-        synopsis,
-        link,
-      });
+  let pageMovies = [];
+
+  [...items].forEach((item) => {
+    let title = item.querySelector(".post-title a").textContent;
+    let description = item.querySelector(".entry p").textContent.split("\n")[1];
+    let link = item.querySelector(".post-title a").getAttribute("href");
+    let dateString = item.querySelector(".tie-date").textContent.trim();
+
+    let timestamp = dayjs(dateString, "MMMM DD, YYYY").toDate();
+
+    pageMovies.push({
+      id: uuid(),
+      title,
+      description,
+      link,
+      created: timestamp,
+      source: "tfpdl",
     });
+  });
 
-    movies.push({
-      page: pageNo,
-      movies: pageMovies,
-    });
-  };
+  let TOTAL_PAGES = getTotalPages(pageContent);
 
-  const getLastPageNo = (pageContent) => {
-    let $ = cheerio.load(pageContent);
+  return [pageMovies, TOTAL_PAGES];
+};
 
-    let pages = $(".pagination a");
-    let lastPage = pages[pages.length - 1];
-    let lastLink = lastPage.attribs["href"];
-    if (lastLink.endsWith("/")) {
-      lastLink = lastLink.slice(0, -1);
+export const promiseWait = (seconds) =>
+  new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+
+const getFirstNonEmptyLine = (lines) => {
+  for (let line of lines) {
+    if (line && line.trim().length > 0) {
+      return line;
     }
-    let lastLinkParts = lastLink.split("/");
-    let lastPageNo = Number(lastLinkParts[lastLinkParts.length - 1]);
-    return lastPageNo;
-  };
-
-  parsePage(html, 1);
-
-  // scrape other pages
-  let lastPageNo = getLastPageNo(html);
-
-  lastPageNo = Math.min(MAX_PAGE, lastPageNo);
-
-  let promises = [];
-  for (let page = 2; page <= lastPageNo; page++) {
-    let pageUrl = `https://tfpdl.se/category/movies/page/${page}`;
-    promises.push(
-      axios
-        .get(pageUrl)
-        .then(({ data: pageContent }) => {
-          parsePage(pageContent, page);
-        })
-        .catch((err) => {
-          console.error(`skipping page ${page}, reason: ${err.message}`);
-        })
-    );
   }
-
-  await Promise.all(promises);
-
-  await fs.writeFile("./movies.json", JSON.stringify(movies, null, 2));
+  return "";
 };
 
 export const getFrontPageMovies = async (page) => {
@@ -85,7 +69,6 @@ export const getFrontPageMovies = async (page) => {
   if (page > 1) {
     url = url + `/page/${page}`;
   }
-  console.log({ url });
 
   let response = await axios.get(url, {
     headers: {
@@ -100,15 +83,6 @@ export const getFrontPageMovies = async (page) => {
   let items = $.querySelectorAll(".item-list");
 
   let movies = [];
-
-  const getFirstNonEmptyLine = (lines) => {
-    for (let line of lines) {
-      if (line && line.trim().length > 0) {
-        return line;
-      }
-    }
-    return "";
-  };
 
   [...items].forEach((item) => {
     let title = item.querySelector(".post-title a").text;
@@ -194,12 +168,6 @@ export const getSafeTxtLink = async (browser, xproxxLink) => {
 
     await page.goto(xproxxLink);
 
-    // let SELECTORS = {
-    //   FIRST_COUNTDOWN: "#soralink-human-verif-countdown-text",
-    //   SECOND_COUNTDOWN: "",
-    //   LAST_COUNTDOWN: "",
-    // };
-
     let firstCountdown = await page.waitForXPath(
       `//*[@id="landing"]/div[2]/center/span`
     );
@@ -255,18 +223,15 @@ const getDownloadLinksFromSafeTxt = async (browser, safeTxtLink) => {
   if (!token && !slug) {
     throw new Error(`Couldn't extract token and slug from page`);
   }
-  console.log({ token, slug });
 
   const PASSWORD = "tfpdl";
 
   let API_URL = "https://safetxt.net/get-paste";
-  console.log("fetching with axios..");
   let response = await axios.post(API_URL, {
     _token: token,
     password: PASSWORD,
     slug,
   });
-  console.log("fetch done!");
 
   let content = atob(response.data.content);
   content = decodeURIComponent(content.replace(/\+/g, "%20"));
@@ -274,7 +239,6 @@ const getDownloadLinksFromSafeTxt = async (browser, safeTxtLink) => {
     .parse(content)
     .querySelectorAll(".cm-url")
     .map((link) => link.getAttribute("href"));
-  console.log({ links });
   return links;
 };
 
@@ -292,6 +256,5 @@ export const generateDownloadLinksFromRedirectLink = async (xproxxLink) => {
 export const generateDownloadLinkFromMovieLink = async (url) => {
   let xproxxLink = await getXproxxxLink(url);
   let links = await generateDownloadLinksFromRedirectLink(xproxxLink);
-  console.log({ links });
   return links;
 };

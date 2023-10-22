@@ -1,6 +1,7 @@
 import {
   generateDownloadLinkFromMovieLink,
   generateDownloadLinksFromRedirectLink,
+  crawlPages,
 } from "./crawler.js";
 
 let greenLandMovieRedirectLink = `https://tfpdl.se/tfpdl?d048c7b91a=ZW52bmdreWFZaVRSWE1ObGFzNnZPdUJUcCsrbHdEUkhOU004TFRQNHFLU0J3NjZCMDY4YW1IZnJSQ00zemU5N29BbWFZTTVkemxxcnd1T2JFVzl4SmswU2lzSFd5cWtHelRVYXBQVmFpVFE9`;
@@ -21,4 +22,6 @@ let barbieRedirectLink = `https://tfpdl.se/tfpdl?d048c7b91a=K2h3VWplSEdFckk3MWF0
 let theEqualizerMovie =
   "https://tfpdl.se/the-equalizer-3-2023-720p-web-dl-x264-tfpdl/";
 
-generateDownloadLinkFromMovieLink(theEqualizerMovie).then(console.log);
+// generateDownloadLinkFromMovieLink(theEqualizerMovie).then(console.log);
+
+crawlPages();
