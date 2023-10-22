@@ -42,6 +42,7 @@ router.get("/recentMovies", async (req, res) => {
     let movies = await Db.select()
       .limit(ITEMS_PER_PAGE)
       .offset(ITEMS_PER_PAGE * pageNumber)
+      .orderBy('created', 'desc')
       .table("movies");
     let totalMovies = await Db.count("id").table("movies");
     let lastPage = Math.ceil(totalMovies / ITEMS_PER_PAGE);
