@@ -4,11 +4,6 @@ import cors from "cors";
 import { Db } from "./dbv2.js";
 // import { format, transports } from "winston";
 // import expressWinston from "express-winston";
-// import path from "path";
-// import { rootDir } from "./config.js";
-
-// const CLIENT_ROOT_DIR = path.resolve(rootDir, "client/dist");
-// const CLIENT_ENTRY = path.resolve(CLIENT_ROOT_DIR, "index.html");
 
 const createApp = async () => {
   const app = express();
