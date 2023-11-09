@@ -1,14 +1,14 @@
 import express from "express";
-import expressWinston from "express-winston";
-import { format, transports } from "winston";
 import router from "./router.js";
 import cors from "cors";
-import path from "path";
-import { rootDir } from "./config.js";
 import { Db } from "./dbv2.js";
+// import { format, transports } from "winston";
+// import expressWinston from "express-winston";
+// import path from "path";
+// import { rootDir } from "./config.js";
 
-const CLIENT_ROOT_DIR = path.resolve(rootDir, "client/dist");
-const CLIENT_ENTRY = path.resolve(CLIENT_ROOT_DIR, "index.html");
+// const CLIENT_ROOT_DIR = path.resolve(rootDir, "client/dist");
+// const CLIENT_ENTRY = path.resolve(CLIENT_ROOT_DIR, "index.html");
 
 const createApp = async () => {
   const app = express();
@@ -30,21 +30,7 @@ const createApp = async () => {
 
   // app.use(logger);
 
-  app.use(express.static(CLIENT_ROOT_DIR));
-
-  app.get("/testdbv2", async (req, res) => {
-    try {
-      let result = await Db.raw("select now()");
-      res.json(result);
-    } catch (err) {
-      res.status(500).json({ message: "error occured " + err.message });
-    }
-  });
   app.use("/api/", router);
-
-  app.use("*", (req, res) => {
-    res.sendFile(CLIENT_ENTRY);
-  });
 
   app.use((error, req, res, next) => {
     res.status(500).send();
@@ -56,7 +42,9 @@ const createApp = async () => {
 const PORT = process.env.PORT ?? 5183;
 
 const runServer = async () => {
-  // await db.connect();
+  Db.on("connect", () => {
+    console.log("db connected!");
+  });
   let app = await createApp();
   app.listen(PORT, () =>
     console.log(`app is running on port localhost:${PORT}`)

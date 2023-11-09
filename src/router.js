@@ -2,11 +2,13 @@ import express from "express";
 import {
   crawlMoviePage,
   promiseWait,
-  generateDownloadLinkFromMovieLink,
+  generateDownloadLinksFromRedirectLink,
+  extractMovieDetails,
 } from "./crawler.js";
-import { cacheIt } from "./cache.js";
+// import { cacheIt } from "./cache.js";
 import { Db } from "./dbv2.js";
-
+import dayjs from "dayjs";
+import { v4 as uuid } from "uuid";
 const router = express.Router();
 
 const parseStringToNumber = (number) => {
@@ -74,21 +76,76 @@ router.get("/recentMovies", async (req, res) => {
 //     .json({ data: null, message: "your subscription added created" });
 // });
 
+// 2 days
+const LINK_VALIDITY_PERIOD = 2 * 24 * 60 * 60 * 1000;
+
+const invalidateDownloadLinks = async (movieSlug, mirrorDownloadLink) => {
+  let movieDownloadLinks = await Db.select()
+    .where("movie_slug", movieSlug)
+    .limit(1)
+    .table("movies_download_links");
+  let links;
+  if (movieDownloadLinks && movieDownloadLinks.length > 0) {
+    movieDownloadLinks = movieDownloadLinks[0];
+    let linkGeneratedDate = new Date(movieDownloadLinks.created);
+    linkGeneratedDate = dayjs(linkGeneratedDate);
+    const linkHasExpired =
+      dayjs().diff(linkGeneratedDate, "millisecond") > LINK_VALIDITY_PERIOD;
+    if (linkHasExpired) {
+      // generate new ones
+      links = await generateDownloadLinksFromRedirectLink(mirrorDownloadLink);
+      await Db.update({ download_links: links }).where(
+        "id",
+        movieDownloadLinks.id
+      );
+      return links;
+    } else {
+      links = movieDownloadLinks.download_links;
+      return links;
+    }
+  } else {
+    links = await generateDownloadLinksFromRedirectLink(mirrorDownloadLink);
+    await Db("movies_download_links").insert({
+      id: uuid(),
+      movie_slug: movieSlug,
+      download_links: JSON.stringify(links),
+      created: new Date(),
+    });
+    return links;
+  }
+};
+
 router.post("/generateDownloadLink", async (req, res) => {
   let { url } = req.body;
   let urlParts = url.split("/").filter((part) => part.trim() !== "");
-  let movieTitle = urlParts[urlParts.length - 1];
+  let movieSlug = urlParts[urlParts.length - 1];
   if (!url) {
     return res.status(400).json({ error: "movie link is required" });
   }
 
-  let cacheKey = `movie:${movieTitle}`;
-  let links = await cacheIt(cacheKey, () =>
-    generateDownloadLinkFromMovieLink(url)
-  );
-  res.json({
-    data: links,
-  });
+  try {
+    const movieDetails = await extractMovieDetails(url);
+    if (!movieDetails.downloadLink) {
+      throw new Error(`Cannot extract download link from movie ${url}`);
+    }
+    let movieMirrorDownloadLink = movieDetails.downloadLink;
+
+    const links = await invalidateDownloadLinks(
+      movieSlug,
+      movieMirrorDownloadLink
+    );
+
+    movieDetails.movieSlug = movieSlug;
+
+    res.json({
+      data: {
+        movieDetails,
+        downloadLinks: links,
+      },
+    });
+  } catch (err) {
+    throw err;
+  }
 });
 
 /* system routes */
