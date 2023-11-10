@@ -108,19 +108,25 @@ export const getFrontPageMovies = async (page) => {
   return { movies, lastPage };
 };
 
-const getXproxxxLink = async (tfpdlMovieUrl) => {
+export const extractMovieDetails = async (tfpdlMovieUrl) => {
   let response = await axios.get(tfpdlMovieUrl, {
     headers: {
       "User-Agent": USER_AGENT,
     },
   });
   let page = htmlParser.parse(response.data);
-  let downloadLink = page.querySelector(".button");
-  if (downloadLink) {
-    return downloadLink.getAttribute("href");
-  } else {
-    throw new Error(`cant get movie ${tfpdlMovieUrl} xproxxxLink`);
-  }
+  let downloadLink = page.querySelector(".button")?.getAttribute("href");
+  let movieTitle = page.querySelector(".post-title")?.textContent;
+  let movieAdded = page.querySelector(".tie-date")?.textContent;
+  let movieDescription = page.querySelector(".entry p")?.textContent?.trim();
+  let moviePoster = page.querySelector(".entry img")?.getAttribute("src");
+  return {
+    downloadLink,
+    movieTitle,
+    movieAdded,
+    movieDescription,
+    moviePoster,
+  };
 };
 
 export const getSafeTxtLink = async (browser, xproxxLink) => {
@@ -254,7 +260,11 @@ export const generateDownloadLinksFromRedirectLink = async (xproxxLink) => {
 };
 
 export const generateDownloadLinkFromMovieLink = async (url) => {
-  let xproxxLink = await getXproxxxLink(url);
+  let movieDetails = await extractMovieDetails(url);
+  let { downloadLink } = movieDetails;
+  if (!downloadLink) {
+    throw new Error(`Cannot extract link from movie ${url}`);
+  }
   let links = await generateDownloadLinksFromRedirectLink(xproxxLink);
-  return links;
+  return [movieDetails, links];
 };
