@@ -1,8 +1,11 @@
+import dotenv from "dotenv";
 // Update with your config settings.
-import { dbConfig } from "./config.js";
+import { dbConfig } from "./src/config.js";
 /**
  * @type { Object.<string, import("knex").Knex.Config> }
  */
+dotenv.config();
+
 export default {
   development: {
     client: "mysql2",

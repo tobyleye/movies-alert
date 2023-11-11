@@ -6,7 +6,7 @@ import {
   extractMovieDetails,
 } from "./crawler.js";
 // import { cacheIt } from "./cache.js";
-import { Db } from "./dbv2.js";
+import { Db, DbTables } from "./dbv2.js";
 import dayjs from "dayjs";
 import { v4 as uuid } from "uuid";
 const router = express.Router();
@@ -44,7 +44,7 @@ router.get("/recentMovies", async (req, res) => {
     let movies = await Db.select()
       .limit(ITEMS_PER_PAGE)
       .offset(ITEMS_PER_PAGE * pageNumber)
-      .orderBy('created', 'desc')
+      .orderBy("created", "desc")
       .table("movies");
     let totalMovies = await Db.count("id").table("movies");
     let lastPage = Math.ceil(totalMovies / ITEMS_PER_PAGE);
@@ -80,7 +80,11 @@ router.get("/recentMovies", async (req, res) => {
 // 2 days
 const LINK_VALIDITY_PERIOD = 2 * 24 * 60 * 60 * 1000;
 
-const invalidateDownloadLinks = async (movieSlug, mirrorDownloadLink) => {
+const invalidateDownloadLinks = async (
+  movieSlug,
+  movieLink,
+  mirrorDownloadLink
+) => {
   let movieDownloadLinks = await Db.select()
     .where("movie_slug", movieSlug)
     .limit(1)
@@ -109,6 +113,7 @@ const invalidateDownloadLinks = async (movieSlug, mirrorDownloadLink) => {
     await Db("movies_download_links").insert({
       id: uuid(),
       movie_slug: movieSlug,
+      movie_link: movieLink,
       download_links: JSON.stringify(links),
       created: new Date(),
     });
@@ -133,6 +138,7 @@ router.post("/generateDownloadLink", async (req, res) => {
 
     const links = await invalidateDownloadLinks(
       movieSlug,
+      url,
       movieMirrorDownloadLink
     );
 
@@ -147,6 +153,42 @@ router.post("/generateDownloadLink", async (req, res) => {
   } catch (err) {
     throw err;
   }
+});
+
+router.get(
+  "/recentlyGeneratedMovies",
+  async function getRecentlyGeneratedMovies(req, res) {
+    const lastTenGeneratedMovies = await DbTables.MoviesDownloadLinks.select()
+      .orderBy("created", "desc")
+      .limit(10);
+    // lastTenGeneratedMovies.map(each =>)
+    res.json({ data: lastTenGeneratedMovies });
+  }
+);
+
+router.get("/dl/:movieSlug", async function getMovieDownloadLinks(req, res) {
+  const { movieSlug } = req.params;
+  let result = await DbTables.MoviesDownloadLinks.select().where(
+    "movie_slug",
+    movieSlug
+  );
+  const [movieDownloadLinks] = result;
+  if (!movieDownloadLinks) {
+    return res.status(404).send();
+  }
+  let movieLink = movieDownloadLinks.movie_link;
+
+  let movieDetails;
+  if (movieLink) {
+    movieDetails = await extractMovieDetails(movieLink);
+  }
+
+  res.json({
+    data: {
+      movieDetails,
+      downloadLinks: movieDownloadLinks,
+    },
+  });
 });
 
 /* system routes */

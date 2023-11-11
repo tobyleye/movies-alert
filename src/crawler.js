@@ -34,7 +34,7 @@ export const crawlMoviePage = async (page = 1) => {
     let description = item.querySelector(".entry p").textContent.split("\n")[1];
     let link = item.querySelector(".post-title a").getAttribute("href");
     let dateString = item.querySelector(".tie-date").textContent.trim();
-
+    const poster = item.querySelector(".entry img")?.getAttribute("src");
     let timestamp = dayjs(dateString, "MMMM DD, YYYY").toDate();
 
     pageMovies.push({
@@ -43,6 +43,7 @@ export const crawlMoviePage = async (page = 1) => {
       description,
       link,
       created: timestamp,
+      poster,
       source: "tfpdl",
     });
   });

@@ -11,6 +11,17 @@ export const up = async function (knex) {
     table.string("link");
     table.string("source");
     table.dateTime("created");
+    table.string("poster").defaultTo(null);
+    // constraints
+    table.primary("id");
+  });
+
+  await knex.schema.createTable("movies_download_links", (table) => {
+    table.string("id");
+    table.string("movie_slug").unique();
+    table.string("movie_link");
+    table.json("download_links");
+    table.datetime("created");
 
     // constraints
     table.primary("id");
@@ -23,4 +34,5 @@ export const up = async function (knex) {
  */
 export const down = async function (knex) {
   await knex.schema.dropTable("movies");
+  await knex.schema.dropTable("movies_download_links");
 };
