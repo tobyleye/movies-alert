@@ -5,8 +5,7 @@ import {
   generateDownloadLinksFromRedirectLink,
   extractMovieDetails,
 } from "./crawler.js";
-// import { cacheIt } from "./cache.js";
-import { Db, DbTables } from "./dbv2.js";
+import { Db } from "./dbv2.js";
 import dayjs from "dayjs";
 import { v4 as uuid } from "uuid";
 const router = express.Router();
@@ -158,7 +157,8 @@ router.post("/generateDownloadLink", async (req, res) => {
 router.get(
   "/recentlyGeneratedMovies",
   async function getRecentlyGeneratedMovies(req, res) {
-    const lastTenGeneratedMovies = await DbTables.MoviesDownloadLinks.select()
+    const lastTenGeneratedMovies = await Db("movies_download_links")
+      .select()
       .orderBy("created", "desc")
       .limit(10);
     // lastTenGeneratedMovies.map(each =>)
@@ -168,10 +168,10 @@ router.get(
 
 router.get("/dl/:movieSlug", async function getMovieDownloadLinks(req, res) {
   const { movieSlug } = req.params;
-  let result = await DbTables.MoviesDownloadLinks.select().where(
-    "movie_slug",
-    movieSlug
-  );
+  let result = await Db("movies_download_links")
+    .select()
+    .where("movie_slug", movieSlug);
+
   const [movieDownloadLinks] = result;
   if (!movieDownloadLinks) {
     return res.status(404).send();

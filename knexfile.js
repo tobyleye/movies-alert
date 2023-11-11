@@ -36,7 +36,7 @@ export default {
   production: {
     client: "mysql2",
     connection: {
-      uri: process.env.MYSQL_URL,
+      uri: process.env.MYSQL_PROD_URL,
     },
 
     pool: {
