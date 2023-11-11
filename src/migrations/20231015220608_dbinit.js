@@ -15,12 +15,6 @@ export const up = async function (knex) {
     // constraints
     table.primary("id");
   });
-
-  await knex.schema.createTable("crawler_settings", (table) => {
-    table.string("field");
-    table.string("value");
-    table.datetime("updated");
-  });
 };
 
 /**
@@ -29,5 +23,4 @@ export const up = async function (knex) {
  */
 export const down = async function (knex) {
   await knex.schema.dropTable("movies");
-  await knex.schema.dropTable("crawler_settings");
 };

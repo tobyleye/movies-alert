@@ -64,50 +64,6 @@ const getFirstNonEmptyLine = (lines) => {
   return "";
 };
 
-export const getFrontPageMovies = async (page) => {
-  let url = "https://tfpdl.se/category/movies";
-  if (page > 1) {
-    url = url + `/page/${page}`;
-  }
-
-  let response = await axios.get(url, {
-    headers: {
-      "User-Agent": USER_AGENT,
-    },
-  });
-
-  console.log(`${url} status (${response.status})`);
-  let { data } = response;
-
-  let $ = htmlParser.parse(data);
-  let items = $.querySelectorAll(".item-list");
-
-  let movies = [];
-
-  [...items].forEach((item) => {
-    let title = item.querySelector(".post-title a").text;
-    let synopsis = getFirstNonEmptyLine(
-      item.querySelector(".entry p").text.split("\n")
-    );
-    // let downloadLinks = [];
-    let poster = item.querySelector("img").getAttribute("src");
-    poster = poster && poster.split("?")[0];
-    let link = item.querySelector(".post-title a").getAttribute("href");
-    movies.push({
-      title,
-      synopsis,
-      link,
-      poster,
-    });
-  });
-
-  let lastPageUrl = $.querySelector(".pagination .last").getAttribute("href");
-  let lastPageUrlParts = lastPageUrl.split("/").filter((part) => part !== "");
-  let lastPage = lastPageUrlParts[lastPageUrlParts.length - 1];
-
-  return { movies, lastPage };
-};
-
 export const extractMovieDetails = async (tfpdlMovieUrl) => {
   let response = await axios.get(tfpdlMovieUrl, {
     headers: {
