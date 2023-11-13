@@ -55,27 +55,6 @@ router.get("/recentMovies", async (req, res) => {
   }
 });
 
-// router.post("/subscribe", async function addNewSubscription(req, res) {
-//   let { movieTitle, email } = req.body;
-//   if (!movieTitle && !email) {
-//     return res
-//       .status(400)
-//       .json({ error: "movie title and email are required man" });
-//   }
-//   let subId = uuid();
-
-//   let values = {
-//     id: subId,
-//     movie_title: movieTitle,
-//     email: email,
-//     created: String(Date.now()),
-//   };
-//   await db.query("insert into movie_subscriptions set ?", values);
-//   res
-//     .status(200)
-//     .json({ data: null, message: "your subscription added created" });
-// });
-
 // 2 days
 const LINK_VALIDITY_PERIOD = 2 * 24 * 60 * 60 * 1000;
 
@@ -98,10 +77,9 @@ const invalidateDownloadLinks = async (
     if (linkHasExpired) {
       // generate new ones
       links = await generateDownloadLinksFromRedirectLink(mirrorDownloadLink);
-      await Db.update({ download_links: links }).where(
-        "id",
-        movieDownloadLinks.id
-      );
+      await Db("movies_download_links")
+        .update({ download_links: links })
+        .where("id", movieDownloadLinks.id);
       return links;
     } else {
       links = movieDownloadLinks.download_links;
