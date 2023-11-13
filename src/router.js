@@ -5,7 +5,7 @@ import {
   generateDownloadLinksFromRedirectLink,
   extractMovieDetails,
 } from "./crawler.js";
-import { Db } from "./dbv2.js";
+import { Db } from "./db.js";
 import dayjs from "dayjs";
 import { v4 as uuid } from "uuid";
 const router = express.Router();

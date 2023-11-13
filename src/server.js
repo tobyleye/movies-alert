@@ -1,7 +1,7 @@
 import express from "express";
 import router from "./router.js";
 import cors from "cors";
-import { Db } from "./dbv2.js";
+import { Db } from "./db.js";
 // import { format, transports } from "winston";
 // import expressWinston from "express-winston";
 
