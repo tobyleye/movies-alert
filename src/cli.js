@@ -17,4 +17,6 @@ const run = async () => {
     console.log(`Sorry. an error occured. ${err.message}`);
   }
 };
+
 run().finally(process.exit);
+

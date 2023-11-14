@@ -222,6 +222,6 @@ export const generateDownloadLinkFromMovieLink = async (url) => {
   if (!downloadLink) {
     throw new Error(`Cannot extract link from movie ${url}`);
   }
-  let links = await generateDownloadLinksFromRedirectLink(xproxxLink);
+  let links = await generateDownloadLinksFromRedirectLink(downloadLink);
   return [movieDetails, links];
 };
