@@ -63,17 +63,16 @@ const invalidateDownloadLinks = async (
   movieLink,
   mirrorDownloadLink
 ) => {
-  let movieDownloadLinks = await Db.select()
+  let [movieDownloadLinks] = await Db.select()
     .where("movie_slug", movieSlug)
     .limit(1)
     .table("movies_download_links");
   let links;
-  if (movieDownloadLinks && movieDownloadLinks.length > 0) {
-    movieDownloadLinks = movieDownloadLinks[0];
+  if (movieDownloadLinks) {
     let linkGeneratedDate = new Date(movieDownloadLinks.created);
     linkGeneratedDate = dayjs(linkGeneratedDate);
     const linkHasExpired =
-      dayjs().diff(linkGeneratedDate, "millisecond") > LINK_VALIDITY_PERIOD;
+      dayjs().diff(linkGeneratedDate, "milliseconds") > LINK_VALIDITY_PERIOD;
     if (linkHasExpired) {
       // generate new ones
       links = await generateDownloadLinksFromRedirectLink(mirrorDownloadLink);
