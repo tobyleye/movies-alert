@@ -1,4 +1,4 @@
-import { generateDownloadLinkFromMovieLink } from "./crawler.js";
+import { generateDownloadLinkFromMovieLink } from "../crawler.js";
 
 const run = async () => {
   let link = process.argv[2];
@@ -8,7 +8,7 @@ const run = async () => {
   }
   try {
     console.log("working...");
-    let links = await generateDownloadLinkFromMovieLink(link);
+    let [_, links] = await generateDownloadLinkFromMovieLink(link);
     console.log("Here are your links");
     links.forEach((link) => {
       console.log(link);
@@ -19,4 +19,3 @@ const run = async () => {
 };
 
 run().finally(process.exit);
-
