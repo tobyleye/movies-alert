@@ -4,6 +4,8 @@ import cors from "cors";
 import { Db } from "./db.js";
 // import { format, transports } from "winston";
 // import expressWinston from "express-winston";
+import errors from "./handlers/errors.js";
+import { crawlMovies } from "./jobs.js";
 
 const createApp = async () => {
   const app = express();
@@ -27,9 +29,7 @@ const createApp = async () => {
 
   app.use("/api/", router);
 
-  app.use((error, req, res, next) => {
-    res.status(500).send();
-  });
+  app.use(errors.errorHandler);
 
   return app;
 };
@@ -44,6 +44,7 @@ const runServer = async () => {
   app.listen(PORT, () =>
     console.log(`app is running on port localhost:${PORT}`)
   );
+  crawlMovies();
 };
 
 runServer();

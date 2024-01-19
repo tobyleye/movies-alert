@@ -12,6 +12,10 @@ let dbConfig = {
   database: "moviesalert",
 };
 
+console.log({
+  env: process.env.NODE_ENV,
+});
+
 if (process.env.NODE_ENV === "production") {
   dbConfig = {
     uri: process.env.MYSQL_URL,

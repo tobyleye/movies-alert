@@ -185,7 +185,7 @@ router.get("/_system/crawlPages", async (req, res) => {
         try {
           let [movies] = await crawlMoviePage(page);
           await Db("movies").insert(movies);
-          let randomWaitSeconds = 3 + Math.floor(Math.random() * 5);
+          let randomWaitSeconds = 5 + Math.floor(Math.random() * 5);
           await promiseWait(randomWaitSeconds);
         } catch (err) {
           console.log(`can't crawl page ${page}. ${err.message}`);

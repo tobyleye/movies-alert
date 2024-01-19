@@ -10,7 +10,8 @@
     "dev": "NODE_ENV=development nodemon --ignore src/client src/server.js",
     "prepare": "husky install",
     "genDownloadLink": "node ./src/cli/genDownloadLink",
-    "genRedirectLink": "node ./src/cli/genRedirectLink"
+    "genRedirectLink": "node ./src/cli/genRedirectLink",
+    "crawl": "node ./src/cli/crawlMovies.js"
   },
   "keywords": [],
   "author": "",
